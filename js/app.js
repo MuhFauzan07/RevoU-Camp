@@ -6,7 +6,8 @@
 'use strict';
 
 /* ─── Storage keys ───────────────────────────────────── */
-const KEY_TX = 'ebv_transactions';
+const KEY_TX    = 'ebv_transactions';
+const KEY_THEME = 'ebv_theme';
 
 /* ─── Categories ─────────────────────────────────────── */
 const CATEGORIES = [
@@ -38,6 +39,35 @@ const summaryContent = document.getElementById('monthlySummaryContent');
 const nameError      = document.getElementById('nameError');
 const amountError    = document.getElementById('amountError');
 const categoryError  = document.getElementById('categoryError');
+const themeToggleBtn = document.getElementById('themeToggle');
+
+/* ─── Theme ──────────────────────────────────────────── */
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.body.classList.add('dark');
+    themeToggleBtn.textContent = '☀️';
+    themeToggleBtn.setAttribute('aria-label', 'Switch to light mode');
+  } else {
+    document.body.classList.remove('dark');
+    themeToggleBtn.textContent = '🌙';
+    themeToggleBtn.setAttribute('aria-label', 'Switch to dark mode');
+  }
+  // Redraw chart so legend text colour updates
+  if (chartInstance) {
+    const isDark = theme === 'dark';
+    chartInstance.options.plugins.legend.labels.color = isDark ? '#e2e8f0' : '#222';
+    chartInstance.data.datasets[0].borderColor = isDark ? '#1a1d27' : '#fff';
+    chartInstance.update();
+  }
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  const isDark = document.body.classList.contains('dark');
+  const next   = isDark ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem(KEY_THEME, next);
+});
 
 /* ─── Helpers ────────────────────────────────────────── */
 
@@ -220,7 +250,7 @@ function renderChart() {
         data,
         backgroundColor: colors,
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: document.body.classList.contains('dark') ? '#1a1d27' : '#fff',
       }],
     },
     options: {
@@ -230,6 +260,7 @@ function renderChart() {
         legend: {
           position: 'bottom',
           labels: {
+            color: document.body.classList.contains('dark') ? '#e2e8f0' : '#222',
             padding: 14,
             font: { size: 12 },
             usePointStyle: true,
@@ -320,6 +351,10 @@ function renderAll() {
 
 /* ─── Init ───────────────────────────────────────────── */
 (function init() {
+  // Apply saved theme before rendering to avoid flash
+  const savedTheme = localStorage.getItem(KEY_THEME) || 'light';
+  applyTheme(savedTheme);
+
   loadAll();
   initViewMonth();
   renderAll();
